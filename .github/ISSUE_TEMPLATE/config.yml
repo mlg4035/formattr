@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and discussion
+    url: https://github.com/mlg4035/formattr/discussions
+    about: Ask questions or start broader discussions here.

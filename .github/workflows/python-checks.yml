@@ -1,0 +1,46 @@
+name: Python checks
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Syntax compile
+        run: |
+          python - <<'PY'
+          import pathlib
+          import py_compile
+
+          roots = [pathlib.Path("app.py"), pathlib.Path("services"), pathlib.Path("prompts")]
+          files = []
+          for root in roots:
+              if root.is_file() and root.suffix == ".py":
+                  files.append(root)
+              elif root.is_dir():
+                  files.extend(root.rglob("*.py"))
+
+          for file_path in files:
+              py_compile.compile(str(file_path), doraise=True)
+
+          print(f"Compiled {len(files)} Python files successfully.")
+          PY
+
