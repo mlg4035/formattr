@@ -125,6 +125,52 @@ Then edit `.env` and set:
 streamlit run app.py
 ```
 
+## Docker Deployment (Traefik)
+
+This repo now includes:
+
+- `Dockerfile`
+- `docker-compose.yml` (configured for an external Docker network named `traefik`)
+
+### 1) Prepare env files on your VPS
+
+```bash
+cp .env.example .env
+```
+
+Set your app/API keys in `.env`:
+
+- `OPENROUTER_API_KEY`
+- `TOOLERBOX_API_KEY` (if using transcript import)
+
+Also add Traefik routing variables in `.env`:
+
+- `FORMATTR_HOST` (example: `formattr.yourdomain.com`)
+- `TRAEFIK_CERT_RESOLVER` (example: `letsencrypt`)
+
+### 2) Ensure Traefik network exists
+
+```bash
+docker network create traefik
+```
+
+If your Traefik stack already created this network, you can skip this step.
+
+### 3) Build and run
+
+```bash
+docker compose up -d --build
+```
+
+### 4) Verify
+
+```bash
+docker compose ps
+docker compose logs -f formattr
+```
+
+The app is exposed to Traefik on internal port `8501` and should be reachable at `https://<FORMATTR_HOST>`.
+
 ## Branding Assets
 
 Branding files live in `assets/`:
