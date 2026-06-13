@@ -5,6 +5,7 @@ A Python Streamlit app inspired by the referenced Chrome extension side panel, b
 ## Features
 
 - Paste text and format it with streaming output.
+- Load a YouTube transcript into Input by video ID (via ToolerBox API).
 - OpenRouter-powered connection panel:
   - Provider-family dropdown (OpenAI, Google, Anthropic, etc.)
   - `All providers` option
@@ -110,6 +111,13 @@ Then edit `.env` and set:
 - `OPENROUTER_FAMILY` (optional, default `openai`)
 - `OPENROUTER_HTTP_REFERER` (optional, default `http://localhost`)
 - `OPENROUTER_APP_TITLE` (optional, default `Formatr`)
+- `TOOLERBOX_API_KEY` (required only for YouTube transcript loading)
+
+## YouTube Transcript Import
+
+- Enter an 11-character YouTube video ID in the `YouTube video ID` field near `Input`.
+- Click `Load Transcript` to fetch transcript text using ToolerBox `youtube-transcript`.
+- The loaded transcript replaces the current Input text.
 
 ## Run
 

@@ -43,6 +43,7 @@ from services.presets import (
     save_custom_preset,
 )
 from services.ui_settings import load_ui_settings, save_ui_settings
+from services.youtube_transcript import fetch_youtube_transcript
 
 
 load_dotenv()
@@ -182,6 +183,7 @@ PERSISTED_UI_SETTINGS = [
 def initialize_state() -> None:
     defaults = {
         "raw_text": "",
+        "youtube_video_id": "",
         "formatted_text": "",
         "stream_title": "Formatted Result",
         "stream_title_edit": "Formatted Result",
@@ -1146,6 +1148,19 @@ main_col, history_col = st.columns([3, 2], gap="large")
 
 with main_col:
     st.subheader("Input")
+    transcript_cols = st.columns([2.5, 1], gap="small")
+    st.session_state.youtube_video_id = transcript_cols[0].text_input(
+        "YouTube video ID",
+        value=st.session_state.youtube_video_id,
+        placeholder="e.g. dQw4w9WgXcQ",
+    )
+    if transcript_cols[1].button("Load Transcript", width="stretch"):
+        try:
+            st.session_state.raw_text = fetch_youtube_transcript(st.session_state.youtube_video_id)
+        except Exception as exc:  # noqa: BLE001
+            st.error(str(exc))
+        else:
+            st.success("Transcript loaded into Input.")
     st.session_state.raw_text = st.text_area(
         "Paste your text here...",
         value=st.session_state.raw_text,
@@ -1602,6 +1617,7 @@ with main_col:
 
         if st.button("Reset session"):
             st.session_state.raw_text = ""
+            st.session_state.youtube_video_id = ""
             st.session_state.formatted_text = ""
             st.session_state.stream_title = "Formatted Result"
             st.session_state.stream_title_edit = "Formatted Result"
