@@ -23,6 +23,21 @@ const TOOLERBOX_TRANSCRIPT_URL = 'https://toolerbox.com/api/v1/youtube-transcrip
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
 const MAX_HTML_UNESCAPE_PASSES = 5
 const SETTINGS_STORAGE_KEY = 'formattr.byok.settings.v1'
+const PRESETS_STORAGE_KEY = 'formattr.byok.presets.v1'
+const HISTORY_STORAGE_KEY = 'formattr.byok.history.v1'
+
+type PresetSettings = {
+  textChangeLevel: TextChangeLevel
+  formatOptions: FormatOptions
+}
+
+type HistoryEntry = {
+  id: string
+  title: string
+  inputText: string
+  formattedText: string
+  createdAt: string
+}
 
 const MODE_GUIDANCE: Record<string, string> = {
   strict:
@@ -51,6 +66,73 @@ const DEFAULT_OPTIONS: FormatOptions = {
   sectionSummariesMode: 'auto',
   tablesMode: 'off',
   calloutsMode: 'off',
+}
+
+const BUILTIN_PRESETS: Record<string, PresetSettings> = {
+  minimal_cleanup: {
+    textChangeLevel: 'minimal',
+    formatOptions: {
+      enableBold: true,
+      enableItalics: true,
+      enableH1: true,
+      enableH2: true,
+      enableH3: true,
+      bulletsMode: 'auto',
+      pullQuotesMode: 'off',
+      numberedStepsMode: 'off',
+      sectionSummariesMode: 'off',
+      tablesMode: 'off',
+      calloutsMode: 'off',
+    },
+  },
+  article: {
+    textChangeLevel: 'thorough',
+    formatOptions: {
+      enableBold: true,
+      enableItalics: true,
+      enableH1: true,
+      enableH2: true,
+      enableH3: true,
+      bulletsMode: 'prefer',
+      pullQuotesMode: 'prefer',
+      numberedStepsMode: 'auto',
+      sectionSummariesMode: 'auto',
+      tablesMode: 'auto',
+      calloutsMode: 'off',
+    },
+  },
+  executive_brief: {
+    textChangeLevel: 'minimal',
+    formatOptions: {
+      enableBold: true,
+      enableItalics: false,
+      enableH1: false,
+      enableH2: true,
+      enableH3: true,
+      bulletsMode: 'prefer',
+      pullQuotesMode: 'off',
+      numberedStepsMode: 'auto',
+      sectionSummariesMode: 'prefer',
+      tablesMode: 'auto',
+      calloutsMode: 'prefer',
+    },
+  },
+  tutorial: {
+    textChangeLevel: 'thorough',
+    formatOptions: {
+      enableBold: true,
+      enableItalics: true,
+      enableH1: true,
+      enableH2: true,
+      enableH3: true,
+      bulletsMode: 'prefer',
+      pullQuotesMode: 'off',
+      numberedStepsMode: 'prefer',
+      sectionSummariesMode: 'auto',
+      tablesMode: 'auto',
+      calloutsMode: 'prefer',
+    },
+  },
 }
 
 function markdownConstraints(options: FormatOptions): string {
@@ -156,11 +238,13 @@ function loadSavedSettings(): {
   textChangeLevel: TextChangeLevel
   selectedModel: string
   formatOptions: FormatOptions
+  showDiff: boolean
 } {
   const fallback = {
     textChangeLevel: 'minimal' as TextChangeLevel,
     selectedModel: 'openai/gpt-4o-mini',
     formatOptions: DEFAULT_OPTIONS,
+    showDiff: false,
   }
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY)
@@ -169,15 +253,61 @@ function loadSavedSettings(): {
       textChangeLevel?: TextChangeLevel
       selectedModel?: string
       formatOptions?: FormatOptions
+      showDiff?: boolean
     }
     return {
       textChangeLevel: parsed.textChangeLevel ?? fallback.textChangeLevel,
       selectedModel: parsed.selectedModel ?? fallback.selectedModel,
       formatOptions: { ...DEFAULT_OPTIONS, ...(parsed.formatOptions ?? {}) },
+      showDiff: parsed.showDiff ?? fallback.showDiff,
     }
   } catch {
     return fallback
   }
+}
+
+function loadCustomPresets(): Record<string, PresetSettings> {
+  try {
+    const raw = localStorage.getItem(PRESETS_STORAGE_KEY)
+    if (!raw) return {}
+    return JSON.parse(raw) as Record<string, PresetSettings>
+  } catch {
+    return {}
+  }
+}
+
+function loadHistory(): HistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as HistoryEntry[]
+    if (!Array.isArray(parsed)) return []
+    return parsed
+  } catch {
+    return []
+  }
+}
+
+function wordCount(text: string): number {
+  return text.trim() ? text.trim().split(/\s+/).length : 0
+}
+
+function computeDiffStats(beforeText: string, afterText: string) {
+  const before = wordCount(beforeText)
+  const after = wordCount(afterText)
+  const delta = after - before
+  const percent = before ? Math.round((Math.abs(delta) / before) * 100) : after > 0 ? 100 : 0
+  return { before, after, delta, percent }
+}
+
+function suggestTitle(markdown: string): string {
+  const firstHeading = markdown
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.startsWith('#'))
+  if (firstHeading) return firstHeading.replace(/^#+\s*/, '').slice(0, 80) || 'Formatted Result'
+  const firstLine = markdown.split('\n').map((line) => line.trim()).find(Boolean) ?? ''
+  return firstLine.slice(0, 80) || 'Formatted Result'
 }
 
 function App() {
@@ -191,6 +321,11 @@ function App() {
   const [modelIds, setModelIds] = useState<string[]>([])
   const [selectedModel, setSelectedModel] = useState(savedSettings.selectedModel)
   const [formatOptions, setFormatOptions] = useState<FormatOptions>(savedSettings.formatOptions)
+  const [showDiff, setShowDiff] = useState(savedSettings.showDiff)
+  const [selectedPreset, setSelectedPreset] = useState('custom')
+  const [customPresetName, setCustomPresetName] = useState('')
+  const [customPresets, setCustomPresets] = useState<Record<string, PresetSettings>>(loadCustomPresets)
+  const [historyItems, setHistoryItems] = useState<HistoryEntry[]>(loadHistory)
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const [isFormatting, setIsFormatting] = useState(false)
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false)
@@ -204,9 +339,18 @@ function App() {
         textChangeLevel,
         selectedModel,
         formatOptions,
+        showDiff,
       }),
     )
-  }, [formatOptions, selectedModel, textChangeLevel])
+  }, [formatOptions, selectedModel, showDiff, textChangeLevel])
+
+  useEffect(() => {
+    localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets))
+  }, [customPresets])
+
+  useEffect(() => {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyItems))
+  }, [historyItems])
 
   const canFormat = useMemo(
     () => openRouterApiKey.trim() && inputText.trim() && selectedModel.trim(),
@@ -292,6 +436,14 @@ function App() {
         throw new Error('OpenRouter returned an empty response.')
       }
       setFormattedText(content)
+      const entry: HistoryEntry = {
+        id: crypto.randomUUID(),
+        title: suggestTitle(content),
+        inputText: inputText,
+        formattedText: content,
+        createdAt: new Date().toISOString(),
+      }
+      setHistoryItems((current) => [entry, ...current].slice(0, 50))
       setSuccessMessage('Formatting complete.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Formatting failed.')
@@ -347,6 +499,80 @@ function App() {
       [key]: value as StructureMode,
     }))
   }
+
+  function applyPreset(settings: PresetSettings) {
+    setTextChangeLevel(settings.textChangeLevel)
+    setFormatOptions({ ...settings.formatOptions })
+  }
+
+  function handlePresetChange(value: string) {
+    setSelectedPreset(value)
+    if (value === 'custom') return
+    if (value.startsWith('custom:')) {
+      const name = value.slice('custom:'.length)
+      const preset = customPresets[name]
+      if (!preset) {
+        setErrorMessage(`Custom preset "${name}" not found.`)
+        setSelectedPreset('custom')
+        return
+      }
+      applyPreset(preset)
+      return
+    }
+    const builtIn = BUILTIN_PRESETS[value]
+    if (builtIn) applyPreset(builtIn)
+  }
+
+  function saveCustomPreset() {
+    const trimmed = customPresetName.trim()
+    if (!trimmed) {
+      setErrorMessage('Enter a custom preset name first.')
+      return
+    }
+    const snapshot: PresetSettings = {
+      textChangeLevel,
+      formatOptions,
+    }
+    setCustomPresets((current) => ({ ...current, [trimmed]: snapshot }))
+    setSelectedPreset(`custom:${trimmed}`)
+    setSuccessMessage(`Saved preset "${trimmed}".`)
+  }
+
+  function deleteSelectedPreset() {
+    if (!selectedPreset.startsWith('custom:')) return
+    const name = selectedPreset.slice('custom:'.length)
+    setCustomPresets((current) => {
+      const next = { ...current }
+      delete next[name]
+      return next
+    })
+    setSelectedPreset('custom')
+    setSuccessMessage(`Deleted preset "${name}".`)
+  }
+
+  function downloadMarkdown() {
+    if (!formattedText.trim()) return
+    const blob = new Blob([formattedText], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'formattr-output.md'
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function loadHistoryItem(entry: HistoryEntry) {
+    setInputText(entry.inputText)
+    setFormattedText(entry.formattedText)
+    setSuccessMessage(`Loaded history item "${entry.title}".`)
+  }
+
+  function deleteHistoryItem(id: string) {
+    setHistoryItems((current) => current.filter((entry) => entry.id !== id))
+  }
+
+  const diffStats = useMemo(() => computeDiffStats(inputText, formattedText), [formattedText, inputText])
+  const customPresetOptions = Object.keys(customPresets).sort((a, b) => a.localeCompare(b))
 
   return (
     <main className="app-shell">
@@ -526,6 +752,48 @@ function App() {
             </select>
           </label>
         </div>
+
+        <div className="row">
+          <label className="inline-field">
+            Preset
+            <select value={selectedPreset} onChange={(event) => handlePresetChange(event.target.value)}>
+              <option value="custom">Custom</option>
+              <option value="minimal_cleanup">Minimal Cleanup</option>
+              <option value="article">Article</option>
+              <option value="executive_brief">Executive Brief</option>
+              <option value="tutorial">Tutorial</option>
+              {customPresetOptions.map((name) => (
+                <option key={name} value={`custom:${name}`}>
+                  Custom: {name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="inline-field">
+            Preset name
+            <input
+              type="text"
+              value={customPresetName}
+              onChange={(event) => setCustomPresetName(event.target.value)}
+              placeholder="e.g. Product Brief"
+            />
+          </label>
+          <button type="button" onClick={saveCustomPreset}>
+            Save Preset
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={deleteSelectedPreset}
+            disabled={!selectedPreset.startsWith('custom:')}
+          >
+            Delete Preset
+          </button>
+          <label className="toggle">
+            <input type="checkbox" checked={showDiff} onChange={(event) => setShowDiff(event.target.checked)} />
+            Show Diff View
+          </label>
+        </div>
       </section>
 
       <section className="card">
@@ -569,12 +837,67 @@ function App() {
 
       <section className="card">
         <h2>Output</h2>
+        <div className="row">
+          <button type="button" onClick={downloadMarkdown} disabled={!formattedText.trim()}>
+            Download Markdown
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => navigator.clipboard.writeText(formattedText)}
+            disabled={!formattedText.trim()}
+          >
+            Copy Output
+          </button>
+          <span className="meta">
+            Words: before {diffStats.before} / after {diffStats.after} / delta {diffStats.delta >= 0 ? '+' : ''}
+            {diffStats.delta} ({diffStats.percent}%)
+          </span>
+        </div>
         <textarea
           rows={14}
           value={formattedText}
           onChange={(event) => setFormattedText(event.target.value)}
           placeholder="Formatted markdown will appear here..."
         />
+        {showDiff ? (
+          <div className="grid two-col">
+            <label>
+              Original
+              <textarea rows={8} value={inputText} readOnly />
+            </label>
+            <label>
+              Formatted
+              <textarea rows={8} value={formattedText} readOnly />
+            </label>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card">
+        <h2>History</h2>
+        {historyItems.length === 0 ? (
+          <p className="meta">No history yet. Format text to create entries.</p>
+        ) : (
+          <div className="history-list">
+            {historyItems.map((entry) => (
+              <div key={entry.id} className="history-item">
+                <div>
+                  <strong>{entry.title}</strong>
+                  <p className="meta">{new Date(entry.createdAt).toLocaleString()}</p>
+                </div>
+                <div className="row">
+                  <button type="button" className="secondary" onClick={() => loadHistoryItem(entry)}>
+                    Load
+                  </button>
+                  <button type="button" className="secondary" onClick={() => deleteHistoryItem(entry.id)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {errorMessage ? <p className="status error">{errorMessage}</p> : null}

@@ -10,6 +10,13 @@ Current Phase 1 scope:
 - Direct ToolerBox YouTube transcript import
 - Local persistence for non-sensitive formatting settings
 
+Phase 2 additions in progress:
+
+- Built-in and custom presets
+- Local history storage with reload/delete
+- Diff toggle with word-level change stats
+- Copy output and markdown download actions
+
 ## Development
 
 ```bash

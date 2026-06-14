@@ -130,6 +130,13 @@ streamlit run app.py
 This repo now also contains a browser-first BYOK frontend in `web/`.
 In this mode, users provide their own API keys in the UI and requests go directly from the browser to OpenRouter/ToolerBox.
 
+Phase 2 parity work now includes:
+
+- Built-in + custom presets (stored locally)
+- Local history list with reload/delete
+- Diff toggle with word-change stats
+- Output actions for copy + Markdown download
+
 Run it locally:
 
 ```bash
