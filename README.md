@@ -1,143 +1,49 @@
-# Streamlit Formatter Clone
+# Formattr
 
-A Python Streamlit app inspired by the referenced Chrome extension side panel, built with OpenRouter model routing for text formatting and local SQLite persistence.
+Formattr now supports two architectures in this repo:
+
+- `web/` (primary): browser-first BYOK app (React + Vite). Users provide their own API keys and requests go directly to OpenRouter/ToolerBox.
+- `app.py` (legacy): Streamlit server app with local SQLite persistence and server-side API calls.
 
 ## Features
 
-- Paste text and format it with streaming output.
-- Load a YouTube transcript into Input by video ID (via ToolerBox API).
-- OpenRouter-powered connection panel:
-  - Provider-family dropdown (OpenAI, Google, Anthropic, etc.)
-  - `All providers` option
-  - Live model dropdown sourced from `https://openrouter.ai/api/v1/models`
-  - Optional `Free models only` toggle
-- Text change levels:
-  - `Strict` (structure only)
-  - `Minimal` (spelling and punctuation)
-  - `Thorough` (grammar and clarity)
-- Markdown option toggles:
-  - Bold
-  - Italic
-  - H1
-  - H2
-  - H3
-- Advanced structure controls (`off` / `auto` / `prefer`):
-  - Bullets/lists
-  - Pull quotes
-  - Numbered steps
-  - Section summaries
-  - Tables
-  - Callouts
-- One-click presets:
-  - Minimal Cleanup
-  - Article
-  - Executive Brief
-  - Tutorial
-- Custom preset storage:
-  - Save current settings as a named preset
-  - Load saved preset from Preset dropdown
-  - Delete saved custom preset
-- Output controls:
-  - Font selector
-  - Theme selector
-  - Diff view toggle
-  - LLM-generated document title
-  - Editable title with save-to-history
-  - Copy output
-  - Export to Markdown
-  - Export to Word (.docx)
-  - Optional "Use project template" toggle (`templates/base_template.docx`)
-  - Auto-discovery dropdown for templates in `templates/` with manual-path fallback
-  - Built-in template style test (`Heading 1/2/3` + paragraph style listing)
-  - Optional H1/H2/H3 font-size overrides for Word export
-  - Saved heading override settings across sessions
-  - Reset session
-  - Thumbs up/down rating
-- Last-used UI formatting/preferences are remembered across sessions
-- Local history:
-  - Grouped by Today / Yesterday / Last 7 days / Older
-  - Reload previous document
-  - Delete history item
-- Local feedback submission.
+- Shared formatting experience:
+  - Text change levels (`Strict`, `Minimal`, `Thorough`)
+  - Markdown toggles (Bold, Italic, H1/H2/H3)
+  - Structure controls (`off` / `auto` / `prefer`)
+  - Built-in presets (`Minimal Cleanup`, `Article`, `Executive Brief`, `Tutorial`)
+- YouTube transcript loading by video ID (ToolerBox `youtube-transcript`)
+
+### Web BYOK (`web/`)
+
+- Required user OpenRouter key + optional ToolerBox key
+- Browser-direct API calls (no backend proxy for model/transcript requests)
+- Model loading from OpenRouter
+- Custom presets (local storage)
+- Local history with reload/delete
+- Diff toggle with word-change stats
+- Copy output + Markdown download
+
+### Legacy Streamlit (`app.py`)
+
+- Server-rendered Streamlit workflow
+- Local SQLite-backed history/feedback/presets
+- Additional export/theming/template controls built in the original app
 
 ## Project Structure
 
-- `app.py`: Streamlit UI and interaction flow.
-- `services/formatter.py`: streaming formatter service (OpenRouter/OpenAI-compatible client).
-- `services/history.py`: SQLite history CRUD.
-- `services/feedback.py`: SQLite feedback storage.
-- `services/presets.py`: SQLite custom preset storage.
-- `services/export_settings.py`: persisted Word export heading settings.
-- `services/ui_settings.py`: persisted UI/formatting preference settings.
-- `services/diff_utils.py`: diff and change stats.
-- `prompts/format_prompt.py`: formatting prompt construction and mode guidance.
+- `web/`: React + Vite BYOK frontend (primary architecture).
+- `app.py`: legacy Streamlit app entrypoint.
+- `services/`: service layer used by Streamlit mode.
+- `prompts/format_prompt.py`: prompt construction and mode guidance shared conceptually across implementations.
 
-## Requirements
+## Requirements (Web BYOK)
 
-- Python 3.10+
-- OpenRouter API key
+- Node.js 20+
+- OpenRouter API key (user-provided in UI)
+- ToolerBox API key (optional; required only for transcript loading)
 
-## Setup
-
-1. Create a virtual environment:
-
-```bash
-python -m venv .venv
-```
-
-2. Activate it:
-
-```bash
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
-
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure environment variables:
-
-```bash
-copy .env.example .env
-```
-
-Then edit `.env` and set:
-
-- `OPENROUTER_API_KEY`
-- `OPENROUTER_MODEL` (optional, default `openai/gpt-4o-mini`)
-- `OPENROUTER_FAMILY` (optional, default `openai`)
-- `OPENROUTER_HTTP_REFERER` (optional, default `http://localhost`)
-- `OPENROUTER_APP_TITLE` (optional, default `Formatr`)
-- `TOOLERBOX_API_KEY` (required only for YouTube transcript loading)
-
-## YouTube Transcript Import
-
-- Enter an 11-character YouTube video ID in the `YouTube video ID` field near `Input`.
-- Click `Load Transcript` to fetch transcript text using ToolerBox `youtube-transcript`.
-- The loaded transcript replaces the current Input text.
-
-## Run
-
-```bash
-streamlit run app.py
-```
-
-## Web BYOK (Phase 1)
-
-This repo now also contains a browser-first BYOK frontend in `web/`.
-In this mode, users provide their own API keys in the UI and requests go directly from the browser to OpenRouter/ToolerBox.
-
-Phase 2 parity work now includes:
-
-- Built-in + custom presets (stored locally)
-- Local history list with reload/delete
-- Diff toggle with word-change stats
-- Output actions for copy + Markdown download
-
-Run it locally:
+## Run Web BYOK (Primary)
 
 ```bash
 cd web
@@ -145,12 +51,48 @@ npm install
 npm run dev
 ```
 
-Build for production static hosting:
+Build for static hosting:
 
 ```bash
 cd web
 npm run build
 ```
+
+## Run Legacy Streamlit (Optional)
+
+Requirements:
+
+- Python 3.10+
+
+Setup:
+
+1. Create and activate virtual environment.
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Configure environment variables:
+
+   ```bash
+   copy .env.example .env
+   ```
+
+4. Run:
+
+   ```bash
+   streamlit run app.py
+   ```
+
+Legacy mode `.env` keys include:
+
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL`
+- `OPENROUTER_FAMILY`
+- `OPENROUTER_HTTP_REFERER`
+- `OPENROUTER_APP_TITLE`
+- `TOOLERBOX_API_KEY`
 
 ## Docker Deployment (Traefik)
 
@@ -216,8 +158,23 @@ Recommended workflow:
 - Generate derivative sizes from the master to maintain consistency.
 - Preserve transparent PNG backgrounds and square canvas ratios.
 
+## Migration Status
+
+| Capability | Web BYOK (`web/`) | Legacy Streamlit (`app.py`) |
+| --- | --- | --- |
+| Direct BYOK requests (no backend proxy) | Implemented | Not applicable |
+| OpenRouter model loading | Implemented | Implemented |
+| YouTube transcript import (ToolerBox) | Implemented | Implemented |
+| Built-in presets | Implemented | Implemented |
+| Custom presets | Implemented (local storage) | Implemented (SQLite) |
+| History (load/delete) | Implemented (local storage) | Implemented (SQLite) |
+| Diff stats and toggle | Implemented | Implemented |
+| Markdown download | Implemented | Implemented |
+| Word (.docx) export and template controls | Planned | Implemented |
+| Feedback persistence | Planned | Implemented |
+
 ## Notes
 
-- Data is stored locally in `data/app.db`.
-- This app does not include cloud auth or sync in this phase.
-- If you do not provide keys in `.env`, you can still enter your OpenRouter API key in the Streamlit sidebar at runtime.
+- `web/` is the preferred path for anonymous/BYOK use cases.
+- Streamlit data is stored locally in `data/app.db`.
+- This project does not include user auth/sync across devices in the current implementation.
