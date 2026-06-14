@@ -155,6 +155,7 @@ docker network create traefik
 ```
 
 If your Traefik stack already created this network, you can skip this step.
+If your environment uses different network names (for example `traefik-proxy`), update `docker-compose.yml` to match your existing Docker networks.
 
 ### 3) Build and run
 
