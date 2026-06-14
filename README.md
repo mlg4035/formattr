@@ -17,12 +17,14 @@ Formattr now supports two architectures in this repo:
 ### Web BYOK (`web/`)
 
 - Required user OpenRouter key + optional ToolerBox key
-- Browser-direct API calls (no backend proxy for model/transcript requests)
+- Browser-direct API calls for OpenRouter
+- ToolerBox transcript calls via same-origin proxy path (`/api/toolerbox/youtube-transcript`) because ToolerBox does not send permissive browser CORS headers
 - Model loading from OpenRouter
 - Custom presets (local storage)
 - Local history with reload/delete
 - Diff toggle with word-change stats
 - Copy output + Markdown download
+- Browser-side Word (.docx) export with template preset and heading override controls
 
 ### Legacy Streamlit (`app.py`)
 
@@ -170,7 +172,7 @@ Recommended workflow:
 | History (load/delete) | Implemented (local storage) | Implemented (SQLite) |
 | Diff stats and toggle | Implemented | Implemented |
 | Markdown download | Implemented | Implemented |
-| Word (.docx) export and template controls | Planned | Implemented |
+| Word (.docx) export and template controls | Implemented (browser template presets + heading overrides) | Implemented |
 | Feedback persistence | Planned | Implemented |
 
 ## Notes

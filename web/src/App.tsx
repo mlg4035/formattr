@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { buildDocxBlob, type TemplatePreset } from './docxExport'
 import './App.css'
 
 type TextChangeLevel = 'none' | 'minimal' | 'thorough'
@@ -19,7 +20,9 @@ type FormatOptions = {
 }
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
-const TOOLERBOX_TRANSCRIPT_URL = 'https://toolerbox.com/api/v1/youtube-transcript'
+const TOOLERBOX_TRANSCRIPT_PROXY_PATH = '/api/toolerbox/youtube-transcript'
+const TOOLERBOX_TRANSCRIPT_URL =
+  import.meta.env.VITE_TOOLERBOX_TRANSCRIPT_URL?.trim() || TOOLERBOX_TRANSCRIPT_PROXY_PATH
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
 const MAX_HTML_UNESCAPE_PASSES = 5
 const SETTINGS_STORAGE_KEY = 'formattr.byok.settings.v1'
@@ -239,12 +242,28 @@ function loadSavedSettings(): {
   selectedModel: string
   formatOptions: FormatOptions
   showDiff: boolean
+  exportTemplatePreset: TemplatePreset
+  exportUseCustomHeadingStyles: boolean
+  exportH1Font: string
+  exportH1Size: number
+  exportH2Font: string
+  exportH2Size: number
+  exportH3Font: string
+  exportH3Size: number
 } {
   const fallback = {
     textChangeLevel: 'minimal' as TextChangeLevel,
     selectedModel: 'openai/gpt-4o-mini',
     formatOptions: DEFAULT_OPTIONS,
     showDiff: false,
+    exportTemplatePreset: 'default' as TemplatePreset,
+    exportUseCustomHeadingStyles: false,
+    exportH1Font: '',
+    exportH1Size: 16,
+    exportH2Font: '',
+    exportH2Size: 14,
+    exportH3Font: '',
+    exportH3Size: 12,
   }
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY)
@@ -254,12 +273,29 @@ function loadSavedSettings(): {
       selectedModel?: string
       formatOptions?: FormatOptions
       showDiff?: boolean
+      exportTemplatePreset?: TemplatePreset
+      exportUseCustomHeadingStyles?: boolean
+      exportH1Font?: string
+      exportH1Size?: number
+      exportH2Font?: string
+      exportH2Size?: number
+      exportH3Font?: string
+      exportH3Size?: number
     }
     return {
       textChangeLevel: parsed.textChangeLevel ?? fallback.textChangeLevel,
       selectedModel: parsed.selectedModel ?? fallback.selectedModel,
       formatOptions: { ...DEFAULT_OPTIONS, ...(parsed.formatOptions ?? {}) },
       showDiff: parsed.showDiff ?? fallback.showDiff,
+      exportTemplatePreset: parsed.exportTemplatePreset ?? fallback.exportTemplatePreset,
+      exportUseCustomHeadingStyles:
+        parsed.exportUseCustomHeadingStyles ?? fallback.exportUseCustomHeadingStyles,
+      exportH1Font: parsed.exportH1Font ?? fallback.exportH1Font,
+      exportH1Size: parsed.exportH1Size ?? fallback.exportH1Size,
+      exportH2Font: parsed.exportH2Font ?? fallback.exportH2Font,
+      exportH2Size: parsed.exportH2Size ?? fallback.exportH2Size,
+      exportH3Font: parsed.exportH3Font ?? fallback.exportH3Font,
+      exportH3Size: parsed.exportH3Size ?? fallback.exportH3Size,
     }
   } catch {
     return fallback
@@ -322,6 +358,18 @@ function App() {
   const [selectedModel, setSelectedModel] = useState(savedSettings.selectedModel)
   const [formatOptions, setFormatOptions] = useState<FormatOptions>(savedSettings.formatOptions)
   const [showDiff, setShowDiff] = useState(savedSettings.showDiff)
+  const [exportTemplatePreset, setExportTemplatePreset] = useState<TemplatePreset>(
+    savedSettings.exportTemplatePreset,
+  )
+  const [exportUseCustomHeadingStyles, setExportUseCustomHeadingStyles] = useState(
+    savedSettings.exportUseCustomHeadingStyles,
+  )
+  const [exportH1Font, setExportH1Font] = useState(savedSettings.exportH1Font)
+  const [exportH1Size, setExportH1Size] = useState(savedSettings.exportH1Size)
+  const [exportH2Font, setExportH2Font] = useState(savedSettings.exportH2Font)
+  const [exportH2Size, setExportH2Size] = useState(savedSettings.exportH2Size)
+  const [exportH3Font, setExportH3Font] = useState(savedSettings.exportH3Font)
+  const [exportH3Size, setExportH3Size] = useState(savedSettings.exportH3Size)
   const [selectedPreset, setSelectedPreset] = useState('custom')
   const [customPresetName, setCustomPresetName] = useState('')
   const [customPresets, setCustomPresets] = useState<Record<string, PresetSettings>>(loadCustomPresets)
@@ -340,9 +388,30 @@ function App() {
         selectedModel,
         formatOptions,
         showDiff,
+        exportTemplatePreset,
+        exportUseCustomHeadingStyles,
+        exportH1Font,
+        exportH1Size,
+        exportH2Font,
+        exportH2Size,
+        exportH3Font,
+        exportH3Size,
       }),
     )
-  }, [formatOptions, selectedModel, showDiff, textChangeLevel])
+  }, [
+    exportH1Font,
+    exportH1Size,
+    exportH2Font,
+    exportH2Size,
+    exportH3Font,
+    exportH3Size,
+    exportTemplatePreset,
+    exportUseCustomHeadingStyles,
+    formatOptions,
+    selectedModel,
+    showDiff,
+    textChangeLevel,
+  ])
 
   useEffect(() => {
     localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets))
@@ -470,8 +539,8 @@ function App() {
       const response = await fetch(TOOLERBOX_TRANSCRIPT_URL, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${key}`,
           'Content-Type': 'application/json',
+          'X-Toolerbox-Api-Key': key,
         },
         body: JSON.stringify({
           url: `https://www.youtube.com/watch?v=${normalizedVideoId}`,
@@ -487,7 +556,13 @@ function App() {
       setInputText(decodeHtmlEntities(payload.text).trim())
       setSuccessMessage('Transcript loaded into Input.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Transcript request failed.')
+      if (error instanceof TypeError) {
+        setErrorMessage(
+          'Transcript request failed due to network/CORS. Configure a same-origin proxy or set VITE_TOOLERBOX_TRANSCRIPT_URL.',
+        )
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : 'Transcript request failed.')
+      }
     } finally {
       setIsLoadingTranscript(false)
     }
@@ -559,6 +634,33 @@ function App() {
     anchor.download = 'formattr-output.md'
     anchor.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function downloadDocx() {
+    if (!formattedText.trim()) return
+    setErrorMessage('')
+    setSuccessMessage('')
+    try {
+      const blob = await buildDocxBlob(formattedText, {
+        templatePreset: exportTemplatePreset,
+        useCustomHeadingStyles: exportUseCustomHeadingStyles,
+        h1Font: exportH1Font,
+        h1Size: exportH1Size,
+        h2Font: exportH2Font,
+        h2Size: exportH2Size,
+        h3Font: exportH3Font,
+        h3Size: exportH3Size,
+      })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = 'formattr-output.docx'
+      anchor.click()
+      URL.revokeObjectURL(url)
+      setSuccessMessage('Downloaded Word document.')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Word export failed.')
+    }
   }
 
   function loadHistoryItem(entry: HistoryEntry) {
@@ -841,6 +943,9 @@ function App() {
           <button type="button" onClick={downloadMarkdown} disabled={!formattedText.trim()}>
             Download Markdown
           </button>
+          <button type="button" onClick={downloadDocx} disabled={!formattedText.trim()}>
+            Download Word (.docx)
+          </button>
           <button
             type="button"
             className="secondary"
@@ -854,6 +959,88 @@ function App() {
             {diffStats.delta} ({diffStats.percent}%)
           </span>
         </div>
+        <div className="grid three-col">
+          <label>
+            Word template preset
+            <select
+              value={exportTemplatePreset}
+              onChange={(event) => setExportTemplatePreset(event.target.value as TemplatePreset)}
+            >
+              <option value="default">Default</option>
+              <option value="professional">Professional</option>
+              <option value="compact">Compact</option>
+            </select>
+          </label>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={exportUseCustomHeadingStyles}
+              onChange={(event) => setExportUseCustomHeadingStyles(event.target.checked)}
+            />
+            Use custom heading styles
+          </label>
+        </div>
+        {exportUseCustomHeadingStyles ? (
+          <div className="grid three-col">
+            <label>
+              H1 font
+              <input
+                type="text"
+                value={exportH1Font}
+                onChange={(event) => setExportH1Font(event.target.value)}
+                placeholder="e.g. Calibri"
+              />
+            </label>
+            <label>
+              H1 size
+              <input
+                type="number"
+                min={10}
+                max={72}
+                value={exportH1Size}
+                onChange={(event) => setExportH1Size(Number(event.target.value || 16))}
+              />
+            </label>
+            <label>
+              H2 font
+              <input
+                type="text"
+                value={exportH2Font}
+                onChange={(event) => setExportH2Font(event.target.value)}
+                placeholder="e.g. Calibri"
+              />
+            </label>
+            <label>
+              H2 size
+              <input
+                type="number"
+                min={10}
+                max={72}
+                value={exportH2Size}
+                onChange={(event) => setExportH2Size(Number(event.target.value || 14))}
+              />
+            </label>
+            <label>
+              H3 font
+              <input
+                type="text"
+                value={exportH3Font}
+                onChange={(event) => setExportH3Font(event.target.value)}
+                placeholder="e.g. Calibri"
+              />
+            </label>
+            <label>
+              H3 size
+              <input
+                type="number"
+                min={10}
+                max={72}
+                value={exportH3Size}
+                onChange={(event) => setExportH3Size(Number(event.target.value || 12))}
+              />
+            </label>
+          </div>
+        ) : null}
         <textarea
           rows={14}
           value={formattedText}
