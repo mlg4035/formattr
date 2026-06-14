@@ -1,29 +1,27 @@
 services:
   formattr:
+    build: .
     container_name: formattr
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: formattr:latest
     restart: unless-stopped
+    networks:
+      - llm-internal
+      - traefik-proxy
+    expose:
+      - "8501"
     env_file:
       - .env
-    volumes:
-      - formattr_data:/app/data
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
-      - "traefik.http.routers.formattr.rule=Host(`${FORMATTR_HOST}`)"
+      - "traefik.http.routers.formattr.rule=Host(`formattr.apphaven.net`)"
       - "traefik.http.routers.formattr.entrypoints=websecure"
       - "traefik.http.routers.formattr.tls=true"
-      - "traefik.http.routers.formattr.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}"
+      - "traefik.http.routers.formattr.tls.certresolver=letsencrypt"
       - "traefik.http.services.formattr.loadbalancer.server.port=8501"
-    networks:
-      - traefik
-
-volumes:
-  formattr_data:
 
 networks:
-  traefik:
+  traefik-proxy:
+    external: true
+  llm-internal:
     external: true
