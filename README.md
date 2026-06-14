@@ -125,6 +125,26 @@ Then edit `.env` and set:
 streamlit run app.py
 ```
 
+## Web BYOK (Phase 1)
+
+This repo now also contains a browser-first BYOK frontend in `web/`.
+In this mode, users provide their own API keys in the UI and requests go directly from the browser to OpenRouter/ToolerBox.
+
+Run it locally:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Build for production static hosting:
+
+```bash
+cd web
+npm run build
+```
+
 ## Docker Deployment (Traefik)
 
 This repo now includes:
