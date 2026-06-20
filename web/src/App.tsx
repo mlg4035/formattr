@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { buildDocxBlob, type TemplatePreset } from './docxExport'
-import formattrLogo from '../../assets/logo-192.png'
-import formattrFavicon from '../../assets/favicon-32.png'
 import './App.css'
 
 type TextChangeLevel = 'none' | 'minimal' | 'thorough'
@@ -25,6 +23,8 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 const TOOLERBOX_TRANSCRIPT_PROXY_PATH = '/api/toolerbox/youtube-transcript'
 const TOOLERBOX_TRANSCRIPT_URL =
   import.meta.env.VITE_TOOLERBOX_TRANSCRIPT_URL?.trim() || TOOLERBOX_TRANSCRIPT_PROXY_PATH
+const WEB_LOGO_PATH = '/favicon.svg'
+const WEB_FAVICON_PATH = '/favicon.svg'
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
 const MAX_HTML_UNESCAPE_PASSES = 5
 const SETTINGS_STORAGE_KEY = 'formattr.byok.settings.v1'
@@ -426,12 +426,12 @@ function App() {
   useEffect(() => {
     const existing = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
     if (existing) {
-      existing.href = formattrFavicon
+      existing.href = WEB_FAVICON_PATH
       return
     }
     const link = document.createElement('link')
     link.rel = 'icon'
-    link.href = formattrFavicon
+    link.href = WEB_FAVICON_PATH
     document.head.appendChild(link)
     return () => {
       if (document.head.contains(link)) {
@@ -699,7 +699,7 @@ function App() {
     <main className="app-shell">
       <header className="hero">
         <div className="hero-brand">
-          <img src={formattrLogo} alt="Formattr logo" className="hero-logo" />
+          <img src={WEB_LOGO_PATH} alt="Formattr logo" className="hero-logo" />
           <h1>Formattr BYOK</h1>
         </div>
         <p>Client-side BYOK: keys stay in your browser session and are sent directly to API providers. We never collect cookies or data from your browser.</p>
