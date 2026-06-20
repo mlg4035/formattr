@@ -17,6 +17,7 @@ Formattr now supports two architectures in this repo:
 ### Web BYOK (`web/`)
 
 - Required user OpenRouter key + optional ToolerBox key
+- Opt-in API key persistence (`sessionStorage` or `localStorage`; default is memory-only). Keys never leave the browser except when sent directly to API providers.
 - Browser-direct API calls for OpenRouter
 - ToolerBox transcript calls via same-origin proxy path (`/api/toolerbox/youtube-transcript`) because ToolerBox does not send permissive browser CORS headers
 - Model loading from OpenRouter
@@ -207,5 +208,6 @@ Recommended workflow:
 ## Notes
 
 - `web/` is the preferred path for anonymous/BYOK use cases.
+- In Web BYOK mode, API keys are never stored on the Formatr server. Users can optionally remember keys in their own browser (`sessionStorage` for the current session, or `localStorage` to persist between visits).
 - Streamlit data is stored locally in `data/app.db`.
 - This project does not include user auth/sync across devices in the current implementation.

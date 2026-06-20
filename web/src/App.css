@@ -134,6 +134,11 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.key-persistence {
+  margin-top: 12px;
+  align-items: flex-end;
+}
+
 .history-list {
   display: flex;
   flex-direction: column;

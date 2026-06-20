@@ -30,6 +30,14 @@ const MAX_HTML_UNESCAPE_PASSES = 5
 const SETTINGS_STORAGE_KEY = 'formattr.byok.settings.v1'
 const PRESETS_STORAGE_KEY = 'formattr.byok.presets.v1'
 const HISTORY_STORAGE_KEY = 'formattr.byok.history.v1'
+const KEYS_STORAGE_KEY = 'formattr.byok.keys.v1'
+
+type RememberKeysScope = 'none' | 'session' | 'local'
+
+type PersistedApiKeys = {
+  openRouterApiKey: string
+  toolerboxApiKey: string
+}
 
 type PresetSettings = {
   textChangeLevel: TextChangeLevel
@@ -239,11 +247,35 @@ function parseErrorMessage(payload: unknown): string | null {
   return null
 }
 
+function loadPersistedApiKeys(scope: RememberKeysScope): PersistedApiKeys {
+  const empty = { openRouterApiKey: '', toolerboxApiKey: '' }
+  if (scope === 'none') return empty
+
+  const storage = scope === 'session' ? sessionStorage : localStorage
+  try {
+    const raw = storage.getItem(KEYS_STORAGE_KEY)
+    if (!raw) return empty
+    const parsed = JSON.parse(raw) as Partial<PersistedApiKeys>
+    return {
+      openRouterApiKey: typeof parsed.openRouterApiKey === 'string' ? parsed.openRouterApiKey : '',
+      toolerboxApiKey: typeof parsed.toolerboxApiKey === 'string' ? parsed.toolerboxApiKey : '',
+    }
+  } catch {
+    return empty
+  }
+}
+
+function clearSavedApiKeys() {
+  sessionStorage.removeItem(KEYS_STORAGE_KEY)
+  localStorage.removeItem(KEYS_STORAGE_KEY)
+}
+
 function loadSavedSettings(): {
   textChangeLevel: TextChangeLevel
   selectedModel: string
   formatOptions: FormatOptions
   showDiff: boolean
+  rememberApiKeysScope: RememberKeysScope
   exportTemplatePreset: TemplatePreset
   exportUseCustomHeadingStyles: boolean
   exportH1Font: string
@@ -258,6 +290,7 @@ function loadSavedSettings(): {
     selectedModel: 'openai/gpt-4o-mini',
     formatOptions: DEFAULT_OPTIONS,
     showDiff: false,
+    rememberApiKeysScope: 'none' as RememberKeysScope,
     exportTemplatePreset: 'default' as TemplatePreset,
     exportUseCustomHeadingStyles: false,
     exportH1Font: '',
@@ -275,6 +308,7 @@ function loadSavedSettings(): {
       selectedModel?: string
       formatOptions?: FormatOptions
       showDiff?: boolean
+      rememberApiKeysScope?: RememberKeysScope
       exportTemplatePreset?: TemplatePreset
       exportUseCustomHeadingStyles?: boolean
       exportH1Font?: string
@@ -289,6 +323,10 @@ function loadSavedSettings(): {
       selectedModel: parsed.selectedModel ?? fallback.selectedModel,
       formatOptions: { ...DEFAULT_OPTIONS, ...(parsed.formatOptions ?? {}) },
       showDiff: parsed.showDiff ?? fallback.showDiff,
+      rememberApiKeysScope:
+        parsed.rememberApiKeysScope === 'session' || parsed.rememberApiKeysScope === 'local'
+          ? parsed.rememberApiKeysScope
+          : fallback.rememberApiKeysScope,
       exportTemplatePreset: parsed.exportTemplatePreset ?? fallback.exportTemplatePreset,
       exportUseCustomHeadingStyles:
         parsed.exportUseCustomHeadingStyles ?? fallback.exportUseCustomHeadingStyles,
@@ -350,8 +388,15 @@ function suggestTitle(markdown: string): string {
 
 function App() {
   const [savedSettings] = useState(loadSavedSettings)
-  const [openRouterApiKey, setOpenRouterApiKey] = useState('')
-  const [toolerboxApiKey, setToolerboxApiKey] = useState('')
+  const [rememberApiKeysScope, setRememberApiKeysScope] = useState<RememberKeysScope>(
+    savedSettings.rememberApiKeysScope,
+  )
+  const [openRouterApiKey, setOpenRouterApiKey] = useState(
+    () => loadPersistedApiKeys(savedSettings.rememberApiKeysScope).openRouterApiKey,
+  )
+  const [toolerboxApiKey, setToolerboxApiKey] = useState(
+    () => loadPersistedApiKeys(savedSettings.rememberApiKeysScope).toolerboxApiKey,
+  )
   const [inputText, setInputText] = useState('')
   const [formattedText, setFormattedText] = useState('')
   const [youtubeVideoId, setYoutubeVideoId] = useState('')
@@ -398,6 +443,7 @@ function App() {
         exportH2Size,
         exportH3Font,
         exportH3Size,
+        rememberApiKeysScope,
       }),
     )
   }, [
@@ -410,10 +456,29 @@ function App() {
     exportTemplatePreset,
     exportUseCustomHeadingStyles,
     formatOptions,
+    rememberApiKeysScope,
     selectedModel,
     showDiff,
     textChangeLevel,
   ])
+
+  useEffect(() => {
+    if (rememberApiKeysScope === 'none') {
+      clearSavedApiKeys()
+      return
+    }
+
+    const storage = rememberApiKeysScope === 'session' ? sessionStorage : localStorage
+    const otherStorage = rememberApiKeysScope === 'session' ? localStorage : sessionStorage
+    otherStorage.removeItem(KEYS_STORAGE_KEY)
+    storage.setItem(
+      KEYS_STORAGE_KEY,
+      JSON.stringify({
+        openRouterApiKey,
+        toolerboxApiKey,
+      }),
+    )
+  }, [openRouterApiKey, rememberApiKeysScope, toolerboxApiKey])
 
   useEffect(() => {
     localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets))
@@ -444,6 +509,17 @@ function App() {
     () => openRouterApiKey.trim() && inputText.trim() && selectedModel.trim(),
     [inputText, openRouterApiKey, selectedModel],
   )
+
+  const hasSavedApiKeys = rememberApiKeysScope !== 'none' || openRouterApiKey.trim() || toolerboxApiKey.trim()
+
+  function handleClearSavedKeys() {
+    clearSavedApiKeys()
+    setOpenRouterApiKey('')
+    setToolerboxApiKey('')
+    setRememberApiKeysScope('none')
+    setSuccessMessage('Saved API keys cleared from this browser.')
+    setErrorMessage('')
+  }
 
   async function fetchModels() {
     setErrorMessage('')
@@ -702,7 +778,10 @@ function App() {
           <img src={WEB_LOGO_PATH} alt="Formattr logo" className="hero-logo" />
           <h1>Formattr BYOK</h1>
         </div>
-        <p>Client-side BYOK: keys stay in your browser session and are sent directly to API providers. We never collect cookies or data from your browser.</p>
+        <p>
+          Client-side BYOK: keys are sent directly to API providers and never stored on Formatr servers.
+          Saved keys remain in this browser only if you choose to remember them.
+        </p>
       </header>
 
       <section className="card">
@@ -729,6 +808,29 @@ function App() {
             />
           </label>
         </div>
+        <div className="row key-persistence">
+          <label className="inline-field">
+            Remember API keys
+            <select
+              value={rememberApiKeysScope}
+              onChange={(event) => setRememberApiKeysScope(event.target.value as RememberKeysScope)}
+            >
+              <option value="none">Don't remember (default)</option>
+              <option value="session">This browser session</option>
+              <option value="local">On this device</option>
+            </select>
+          </label>
+          <button type="button" className="secondary" onClick={handleClearSavedKeys} disabled={!hasSavedApiKeys}>
+            Clear saved keys
+          </button>
+        </div>
+        <p className="meta">
+          {rememberApiKeysScope === 'session'
+            ? 'Keys are stored in sessionStorage and cleared when you close the browser.'
+            : rememberApiKeysScope === 'local'
+              ? 'Keys are stored in localStorage and persist between visits on this device.'
+              : 'Keys are kept in memory only until you refresh or leave the page.'}
+        </p>
       </section>
 
       <section className="card">

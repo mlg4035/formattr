@@ -16,6 +16,7 @@ Current Phase 1 scope:
 - Direct OpenRouter model loading and format requests
 - Direct ToolerBox YouTube transcript import
 - Local persistence for non-sensitive formatting settings
+- Opt-in API key persistence (`sessionStorage` or `localStorage`; default is memory-only)
 
 Phase 2 additions in progress:
 
