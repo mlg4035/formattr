@@ -117,7 +117,6 @@ Set your app/API keys in `.env`:
 Also add Traefik routing variables in `.env`:
 
 - `FORMATTR_HOST` (example: `formattr.yourdomain.com`)
-- `TRAEFIK_CERT_RESOLVER` (example: `letsencrypt`)
 
 ### 2) Ensure Traefik network exists
 
