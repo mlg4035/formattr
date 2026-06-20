@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { buildDocxBlob, type TemplatePreset } from './docxExport'
+import formattrLogo from '../../assets/logo-192.png'
+import formattrFavicon from '../../assets/favicon-32.png'
 import './App.css'
 
 type TextChangeLevel = 'none' | 'minimal' | 'thorough'
@@ -421,6 +423,23 @@ function App() {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyItems))
   }, [historyItems])
 
+  useEffect(() => {
+    const existing = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
+    if (existing) {
+      existing.href = formattrFavicon
+      return
+    }
+    const link = document.createElement('link')
+    link.rel = 'icon'
+    link.href = formattrFavicon
+    document.head.appendChild(link)
+    return () => {
+      if (document.head.contains(link)) {
+        document.head.removeChild(link)
+      }
+    }
+  }, [])
+
   const canFormat = useMemo(
     () => openRouterApiKey.trim() && inputText.trim() && selectedModel.trim(),
     [inputText, openRouterApiKey, selectedModel],
@@ -485,7 +504,7 @@ function App() {
           Authorization: `Bearer ${openRouterApiKey.trim()}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'Formatr BYOK',
+          'X-Title': 'Formattr BYOK',
         },
         body: JSON.stringify({
           model: selectedModel,
@@ -679,8 +698,11 @@ function App() {
   return (
     <main className="app-shell">
       <header className="hero">
-        <h1>Formatr BYOK</h1>
-        <p>Client-side BYOK: keys stay in your browser session and are sent directly to API providers.</p>
+        <div className="hero-brand">
+          <img src={formattrLogo} alt="Formattr logo" className="hero-logo" />
+          <h1>Formattr BYOK</h1>
+        </div>
+        <p>Client-side BYOK: keys stay in your browser session and are sent directly to API providers. We never collect cookies or data from your browser.</p>
       </header>
 
       <section className="card">

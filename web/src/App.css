@@ -9,6 +9,18 @@
   font-size: 1.8rem;
 }
 
+.hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
 .hero p {
   margin-top: 8px;
   color: #6b7280;
