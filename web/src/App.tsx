@@ -774,9 +774,14 @@ function App() {
   return (
     <main className="app-shell">
       <header className="hero">
-        <div className="hero-brand">
-          <img src={WEB_LOGO_PATH} alt="Formattr logo" className="hero-logo" />
-          <h1>Formattr BYOK</h1>
+        <div className="hero-top">
+          <div className="hero-brand">
+            <img src={WEB_LOGO_PATH} alt="Formattr logo" className="hero-logo" />
+            <h1>Formattr BYOK</h1>
+          </div>
+          <a className="hero-guide-link" href="/user-manual.html" target="_blank" rel="noopener noreferrer">
+            User guide
+          </a>
         </div>
         <p>
           Client-side BYOK: keys are sent directly to API providers and never stored on Formatr servers.

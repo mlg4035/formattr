@@ -15,6 +15,24 @@
   gap: 10px;
 }
 
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hero-guide-link {
+  color: #2563eb;
+  font-size: 0.95rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hero-guide-link:hover {
+  text-decoration: underline;
+}
+
 .hero-logo {
   width: 42px;
   height: 42px;

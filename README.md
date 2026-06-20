@@ -26,6 +26,7 @@ Formattr now supports two architectures in this repo:
 - Diff toggle with word-change stats
 - Copy output + Markdown download
 - Browser-side Word (.docx) export with template preset and heading override controls
+- [User guide](docs/user-manual.md) (also served at `/user-manual.html` in the web app)
 
 ### Legacy Streamlit (`app.py`)
 

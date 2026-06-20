@@ -26,6 +26,7 @@ Phase 2 additions in progress:
 - Copy output and markdown download actions
 - Browser-side Word (.docx) export
 - Template preset controls with optional H1/H2/H3 style overrides
+- User guide at `/user-manual.html` (source: `../docs/user-manual.md`)
 
 ## Development
 

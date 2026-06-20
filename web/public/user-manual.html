@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Formattr User Guide</title>
+    <link rel="icon" href="/favicon.svg" />
+    <style>
+      :root {
+        color-scheme: light;
+        --text: #111827;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --bg: #f9fafb;
+        --card: #ffffff;
+        --accent: #2563eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        line-height: 1.6;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      .page {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      header {
+        margin-bottom: 28px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 2rem;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      h2 {
+        margin: 32px 0 12px;
+        font-size: 1.25rem;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+      }
+
+      h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      h3 {
+        margin: 20px 0 8px;
+        font-size: 1.05rem;
+      }
+
+      p,
+      ul,
+      ol,
+      table {
+        margin: 0 0 14px;
+      }
+
+      ul,
+      ol {
+        padding-left: 1.4rem;
+      }
+
+      li {
+        margin-bottom: 6px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--card);
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+        background: #f3f4f6;
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 28px 0;
+      }
+
+      .top-link {
+        display: inline-block;
+        margin-bottom: 16px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95rem;
+      }
+
+      .top-link:hover {
+        text-decoration: underline;
+      }
+
+      footer {
+        margin-top: 40px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <a class="top-link" href="/">← Back to Formattr</a>
+
+      <header>
+        <h1>Formattr User Guide</h1>
+        <p class="subtitle">
+          Browser-based text formatting with your own API keys. Keys and content stay client-side unless you
+          send them to OpenRouter or ToolerBox.
+        </p>
+      </header>
+
+      <h2>Quick start</h2>
+      <ol>
+        <li>Enter your <strong>OpenRouter API key</strong> (required).</li>
+        <li>Click <strong>Load OpenRouter Models</strong> and pick a model.</li>
+        <li>Paste your text into <strong>Input</strong>, or load a YouTube transcript.</li>
+        <li>Adjust formatting options or choose a <strong>Preset</strong>.</li>
+        <li>Click <strong>Format</strong>.</li>
+        <li>Copy, download Markdown, or export Word from <strong>Output</strong>.</li>
+      </ol>
+
+      <h2>API keys</h2>
+
+      <h3>OpenRouter API key (required)</h3>
+      <p>
+        Used for model listing and formatting. Get a key at
+        <a href="https://openrouter.ai/" target="_blank" rel="noopener noreferrer">openrouter.ai</a>. You pay
+        OpenRouter directly; Formattr does not bill you.
+      </p>
+      <ul>
+        <li>Enter the key in the password field.</li>
+        <li>Click <strong>Load OpenRouter Models</strong> before formatting.</li>
+      </ul>
+
+      <h3>ToolerBox API key (optional)</h3>
+      <p>Required only for <strong>Load Transcript</strong> on YouTube videos.</p>
+
+      <h3>Remember API keys</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Don't remember (default)</strong></td>
+            <td>Keys exist only in memory until you refresh or leave the page.</td>
+          </tr>
+          <tr>
+            <td><strong>This browser session</strong></td>
+            <td>Saved in <code>sessionStorage</code>. Survives refresh; cleared when the browser closes.</td>
+          </tr>
+          <tr>
+            <td><strong>On this device</strong></td>
+            <td>Saved in <code>localStorage</code>. Persists between visits on the same browser.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Keys are never stored on Formattr servers. Use <strong>Clear saved keys</strong> to wipe stored keys and
+        reset the preference.
+      </p>
+
+      <h2>Model and prompt settings</h2>
+
+      <h3>Text changes</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Setting</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Strict (structure only)</strong></td>
+            <td>Preserves wording; fixes structure and basic Markdown organization.</td>
+          </tr>
+          <tr>
+            <td><strong>Minimal (spelling &amp; punctuation)</strong></td>
+            <td>Fixes spelling, punctuation, and small grammar issues.</td>
+          </tr>
+          <tr>
+            <td><strong>Thorough (grammar &amp; clarity)</strong></td>
+            <td>Improves grammar, clarity, and flow while keeping the original intent.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>The model is instructed not to invent facts, quotes, or citations.</p>
+
+      <h3>Markdown toggles</h3>
+      <p>Control which Markdown elements the model may use: bold, italics, and H1/H2/H3 headings. Unchecked options are forbidden.</p>
+
+      <h3>Structure controls</h3>
+      <p>Each structure type supports three modes:</p>
+      <ul>
+        <li><strong>Off</strong> — do not use.</li>
+        <li><strong>Auto</strong> — use when naturally helpful.</li>
+        <li><strong>Prefer</strong> — prefer using when readability improves.</li>
+      </ul>
+      <p>Structure options: Lists, Pull quotes, Numbered steps, Section summaries, Tables, and Callouts.</p>
+
+      <h2>Presets</h2>
+      <p>Presets bundle text-change level and formatting toggles into one-click configurations.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Preset</th>
+            <th>Best for</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Minimal Cleanup</strong></td>
+            <td>Light touch-ups</td>
+            <td>Minimal text changes; basic structure only.</td>
+          </tr>
+          <tr>
+            <td><strong>Article</strong></td>
+            <td>Long-form writing</td>
+            <td>Thorough editing; prefers lists and pull quotes.</td>
+          </tr>
+          <tr>
+            <td><strong>Executive Brief</strong></td>
+            <td>Business summaries</td>
+            <td>Minimal changes; prefers lists, summaries, tables, callouts.</td>
+          </tr>
+          <tr>
+            <td><strong>Tutorial</strong></td>
+            <td>How-to content</td>
+            <td>Thorough editing; prefers steps, lists, tables, callouts.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>Custom presets:</strong> configure settings, enter a name, click <strong>Save Preset</strong>.
+        Saved presets persist in this browser. Select one and click <strong>Delete Preset</strong> to remove it.
+      </p>
+      <p><strong>Show Diff View</strong> displays side-by-side original and formatted text below the output.</p>
+
+      <h2>Input</h2>
+      <ul>
+        <li>Paste or type source content into the text area.</li>
+        <li>For YouTube: enter the 11-character video ID and click <strong>Load Transcript</strong> (ToolerBox key required).</li>
+        <li><strong>Format</strong> sends text to OpenRouter; <strong>Reset</strong> clears input and output.</li>
+      </ul>
+
+      <h2>Output</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Download Markdown</strong></td>
+            <td>Saves <code>formattr-output.md</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Download Word (.docx)</strong></td>
+            <td>Exports formatted Markdown as a Word document.</td>
+          </tr>
+          <tr>
+            <td><strong>Copy Output</strong></td>
+            <td>Copies formatted text to the clipboard.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Word export options</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Template</th>
+            <th>Body</th>
+            <th>H1</th>
+            <th>H2</th>
+            <th>H3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Default</td>
+            <td>Calibri</td>
+            <td>18 pt</td>
+            <td>15 pt</td>
+            <td>13 pt</td>
+          </tr>
+          <tr>
+            <td>Professional</td>
+            <td>Arial</td>
+            <td>20 pt</td>
+            <td>16 pt</td>
+            <td>14 pt</td>
+          </tr>
+          <tr>
+            <td>Compact</td>
+            <td>Calibri</td>
+            <td>16 pt</td>
+            <td>14 pt</td>
+            <td>12 pt</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Enable <strong>Use custom heading styles</strong> to override H1/H2/H3 fonts and sizes.</p>
+
+      <h2>History</h2>
+      <p>
+        Each successful format creates a local history entry. Use <strong>Load</strong> to restore input and
+        output, or <strong>Delete</strong> to remove an entry. History is stored in this browser only.
+      </p>
+
+      <h2>Privacy and BYOK</h2>
+      <ul>
+        <li>You provide and pay for your own API access.</li>
+        <li>Keys and text go from your browser to OpenRouter when you format.</li>
+        <li>ToolerBox requests use a same-origin proxy that forwards your key but does not store it.</li>
+        <li>No account login; no server-side storage of your content.</li>
+      </ul>
+
+      <h2>Tips and troubleshooting</h2>
+      <ul>
+        <li><strong>Key required errors</strong> — enter a valid OpenRouter key before loading models or formatting.</li>
+        <li><strong>Empty model list</strong> — click Load OpenRouter Models again; verify your key.</li>
+        <li><strong>Transcript fails</strong> — check ToolerBox key and 11-character video ID.</li>
+        <li><strong>Too much/little editing</strong> — change text-change level, preset, or structure modes.</li>
+        <li><strong>Lost presets/history</strong> — local storage is per browser; clearing site data removes it.</li>
+      </ul>
+
+      <footer>
+        <hr />
+        <p><em>Formattr Web BYOK — format text with your keys, your models, your browser.</em></p>
+      </footer>
+    </div>
+  </body>
+</html>
