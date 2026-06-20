@@ -20,6 +20,7 @@ type FormatOptions = {
 }
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
+const TOOLERBOX_KEYS_URL = 'https://toolerbox.com/dashboard/keys/'
 const TOOLERBOX_TRANSCRIPT_PROXY_PATH = '/api/toolerbox/youtube-transcript'
 const TOOLERBOX_TRANSCRIPT_URL =
   import.meta.env.VITE_TOOLERBOX_TRANSCRIPT_URL?.trim() || TOOLERBOX_TRANSCRIPT_PROXY_PATH
@@ -811,6 +812,9 @@ function App() {
               placeholder="mcpsk_..."
               autoComplete="off"
             />
+            <a className="field-help-link" href={TOOLERBOX_KEYS_URL} target="_blank" rel="noopener noreferrer">
+              Get a ToolerBox API key
+            </a>
           </label>
         </div>
         <div className="row key-persistence">

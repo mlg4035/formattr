@@ -27,7 +27,7 @@ Used for model listing and formatting. Get a key at [openrouter.ai](https://open
 
 ### ToolerBox API key (optional)
 
-Required only if you use **Load Transcript** for YouTube videos. Get a key from ToolerBox if you use that feature.
+Required only if you use **Load Transcript** for YouTube videos. Get a key from [ToolerBox](https://toolerbox.com/dashboard/keys/) if you use that feature.
 
 ### Remember API keys
 

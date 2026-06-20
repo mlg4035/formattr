@@ -98,6 +98,17 @@ button {
   font: inherit;
 }
 
+.field-help-link {
+  font-size: 0.85rem;
+  color: #2563eb;
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.field-help-link:hover {
+  text-decoration: underline;
+}
+
 input,
 select,
 textarea {
