@@ -102,6 +102,9 @@ This repo now includes:
 
 - `Dockerfile`
 - `docker-compose.yml` (configured for an external Docker network named `traefik`)
+- `web.Dockerfile`
+- `web.nginx.conf`
+- `docker-compose.web.yml` (Web BYOK deployment target)
 
 ### 1) Prepare env files on your VPS
 
@@ -141,6 +144,33 @@ docker compose logs -f formattr
 ```
 
 The app is exposed to Traefik on internal port `8501` and should be reachable at `https://<FORMATTR_HOST>`.
+
+## Docker Deployment: Web BYOK
+
+Use this path when deploying the React/Vite `web/` app instead of legacy Streamlit.
+
+1) Ensure `.env` includes:
+
+- `FORMATTR_HOST` (example: `formattr.yourdomain.com`)
+
+2) Build + run:
+
+```bash
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+3) Verify:
+
+```bash
+docker compose -f docker-compose.web.yml ps
+docker compose -f docker-compose.web.yml logs -f formattr-web
+```
+
+Notes:
+
+- `web.nginx.conf` includes a same-origin proxy for `/api/toolerbox/youtube-transcript`.
+- That proxy maps `X-Toolerbox-Api-Key` to upstream bearer auth and enables TLS SNI for ToolerBox.
+- IPv6 upstream DNS resolution is disabled in nginx resolver for compatibility with VPS networks that lack IPv6 routing.
 
 ## Branding Assets
 
