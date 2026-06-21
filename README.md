@@ -6,6 +6,7 @@ Formattr now supports two architectures in this repo:
 <img width="1083" height="417" alt="Screenshot 2026-06-21 at 15-16-51 Formattr BYOK" src="https://github.com/user-attachments/assets/4e860791-7468-4779-a221-605844c75ee4" />
 
 - `app.py` (legacy): Streamlit server app with local SQLite persistence and server-side API calls.
+<img width="1244" height="545" alt="Screenshot 2026-06-21 at 15-28-36 Formatr" src="https://github.com/user-attachments/assets/d85e9518-37cc-43f4-af96-7d6d41d4ae0a" />
 
 ## Features
 
@@ -14,6 +15,8 @@ Formattr now supports two architectures in this repo:
   - Markdown toggles (Bold, Italic, H1/H2/H3)
   - Structure controls (`off` / `auto` / `prefer`)
   - Built-in presets (`Minimal Cleanup`, `Article`, `Executive Brief`, `Tutorial`)
+  <img width="886" height="661" alt="Screenshot 2026-06-21 at 15-31-18 Formatr" src="https://github.com/user-attachments/assets/d31baadc-c045-471e-a0ff-fdc81b2711f5" />
+
 - YouTube transcript loading by video ID (ToolerBox `youtube-transcript`)
 
 ### Web BYOK (`web/`)
