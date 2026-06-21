@@ -14,7 +14,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
-      - "traefik.http.routers.formattr.rule=Host(`formattr.apphaven.net`)"
+      - "traefik.http.routers.formattr.rule=Host(`formattr.example.com`)"
       - "traefik.http.routers.formattr.entrypoints=websecure"
       - "traefik.http.routers.formattr.tls=true"
       - "traefik.http.routers.formattr.tls.certresolver=letsencrypt"
