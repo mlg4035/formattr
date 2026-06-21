@@ -3,6 +3,8 @@
 Formattr now supports two architectures in this repo:
 
 - `web/` (primary): browser-first BYOK app (React + Vite). Users provide their own API keys and requests go directly to OpenRouter/ToolerBox.
+- <img width="1083" height="417" alt="Screenshot 2026-06-21 at 15-16-51 Formattr BYOK" src="https://github.com/user-attachments/assets/4e860791-7468-4779-a221-605844c75ee4" />
+
 - `app.py` (legacy): Streamlit server app with local SQLite persistence and server-side API calls.
 
 ## Features
