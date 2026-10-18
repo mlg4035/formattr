@@ -2,7 +2,7 @@
 
 Formattr now supports two architectures in this repo:
 
-- `web/` (primary): browser-first BYOK app (React + Vite). Users provide their own API keys and requests go directly to OpenRouter/ToolerBox.
+- `web/` (primary): browser-first BYOK app (React + Vite). Users provide their own API keys and requests go directly to OpenRouter/TranscriptAPI.
 <img width="1083" height="417" alt="Screenshot 2026-06-21 at 15-16-51 Formattr BYOK" src="https://github.com/user-attachments/assets/4e860791-7468-4779-a221-605844c75ee4" />
 
 - `app.py` (legacy): Streamlit server app with local SQLite persistence and server-side API calls.
@@ -17,14 +17,14 @@ Formattr now supports two architectures in this repo:
   - Built-in presets (`Minimal Cleanup`, `Article`, `Executive Brief`, `Tutorial`)
   <img width="886" height="661" alt="Screenshot 2026-06-21 at 15-31-18 Formatr" src="https://github.com/user-attachments/assets/d31baadc-c045-471e-a0ff-fdc81b2711f5" />
 
-- YouTube transcript loading by video ID (ToolerBox `youtube-transcript`)
+- YouTube transcript loading by video ID (TranscriptAPI `youtube/transcript`)
 
 ### Web BYOK (`web/`)
 
-- Required user OpenRouter key + optional ToolerBox key
+- Required user OpenRouter key + optional TranscriptAPI key
 - Opt-in API key persistence (`sessionStorage` or `localStorage`; default is memory-only). Keys never leave the browser except when sent directly to API providers.
 - Browser-direct API calls for OpenRouter
-- ToolerBox transcript calls via same-origin proxy path (`/api/toolerbox/youtube-transcript`) because ToolerBox does not send permissive browser CORS headers
+- TranscriptAPI calls via same-origin proxy path (`/api/transcriptapi/youtube/transcript`) because browser requests need a proxy for CORS and bearer-key forwarding
 - Model loading from OpenRouter
 - Custom presets (local storage)
 - Local history with reload/delete
@@ -50,7 +50,7 @@ Formattr now supports two architectures in this repo:
 
 - Node.js 20+
 - OpenRouter API key (user-provided in UI)
-- ToolerBox API key (optional; required only for transcript loading)
+- TranscriptAPI key (optional; required only for transcript loading)
 
 ## Run Web BYOK (Primary)
 
@@ -101,7 +101,7 @@ Legacy mode `.env` keys include:
 - `OPENROUTER_FAMILY`
 - `OPENROUTER_HTTP_REFERER`
 - `OPENROUTER_APP_TITLE`
-- `TOOLERBOX_API_KEY`
+- `TRANSCRIPTAPI_API_KEY`
 
 ## Docker Deployment (Traefik)
 
@@ -122,7 +122,7 @@ cp .env.example .env
 Set your app/API keys in `.env`:
 
 - `OPENROUTER_API_KEY`
-- `TOOLERBOX_API_KEY` (if using transcript import)
+- `TRANSCRIPTAPI_API_KEY` (if using transcript import)
 
 Also add Traefik routing variables in `.env`:
 
@@ -175,8 +175,8 @@ docker compose -f docker-compose.web.yml logs -f formattr-web
 
 Notes:
 
-- `web.nginx.conf` includes a same-origin proxy for `/api/toolerbox/youtube-transcript`.
-- That proxy maps `X-Toolerbox-Api-Key` to upstream bearer auth and enables TLS SNI for ToolerBox.
+- `web.nginx.conf` includes a same-origin proxy for `/api/transcriptapi/youtube/transcript`.
+- That proxy maps `X-Transcriptapi-Api-Key` to upstream bearer auth and enables TLS SNI for TranscriptAPI.
 - IPv6 upstream DNS resolution is disabled in nginx resolver for compatibility with VPS networks that lack IPv6 routing.
 
 ## Branding Assets
@@ -202,7 +202,7 @@ Recommended workflow:
 | --- | --- | --- |
 | Direct BYOK requests (no backend proxy) | Implemented | Not applicable |
 | OpenRouter model loading | Implemented | Implemented |
-| YouTube transcript import (ToolerBox) | Implemented | Implemented |
+| YouTube transcript import (TranscriptAPI) | Implemented | Implemented |
 | Built-in presets | Implemented | Implemented |
 | Custom presets | Implemented (local storage) | Implemented (SQLite) |
 | History (load/delete) | Implemented (local storage) | Implemented (SQLite) |

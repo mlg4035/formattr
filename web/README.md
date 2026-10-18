@@ -2,19 +2,19 @@
 
 This folder contains a React + Vite frontend that sends requests directly from the browser to provider APIs.
 
-Note on ToolerBox transcript loading:
+Note on TranscriptAPI transcript loading:
 
-- ToolerBox does not currently expose browser CORS headers for direct client requests.
-- This app therefore uses a same-origin proxy path (`/api/toolerbox/youtube-transcript`) by default.
+- Browser requests use a same-origin proxy so the API key is forwarded as a bearer token.
+- This app therefore uses a same-origin proxy path (`/api/transcriptapi/youtube/transcript`) by default.
 - In local development, Vite proxy handles this automatically.
-- In production, route that path through your reverse proxy/backend to `https://toolerbox.com/api/v1/youtube-transcript` and map `X-Toolerbox-Api-Key` to `Authorization: Bearer <key>`.
+- In production, route that path through your reverse proxy/backend to `https://transcriptapi.com/api/v2/youtube/transcript` and map `X-Transcriptapi-Api-Key` to `Authorization: Bearer <key>`.
 
 Current Phase 1 scope:
 
 - Required user-provided OpenRouter API key
-- Optional user-provided ToolerBox API key
+- Optional user-provided TranscriptAPI key
 - Direct OpenRouter model loading and format requests
-- Direct ToolerBox YouTube transcript import
+- YouTube transcript import through TranscriptAPI
 - Local persistence for non-sensitive formatting settings
 - Opt-in API key persistence (`sessionStorage` or `localStorage`; default is memory-only)
 
@@ -37,13 +37,13 @@ npm run dev
 
 ## Transcript Proxy Configuration
 
-By default the app posts transcript requests to:
+By default the app requests transcripts from:
 
-- `/api/toolerbox/youtube-transcript`
+- `/api/transcriptapi/youtube/transcript`
 
 You can override this endpoint with:
 
-- `VITE_TOOLERBOX_TRANSCRIPT_URL`
+- `VITE_TRANSCRIPTAPI_TRANSCRIPT_URL`
 
 ## Build
 

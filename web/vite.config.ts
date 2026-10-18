@@ -6,18 +6,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api/toolerbox/youtube-transcript': {
-        target: 'https://toolerbox.com',
+      '/api/transcriptapi': {
+        target: 'https://transcriptapi.com',
         changeOrigin: true,
-        rewrite: () => '/api/v1/youtube-transcript',
+        rewrite: (path) => path.replace(/^\/api\/transcriptapi/, '/api/v2'),
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
-            const apiKeyHeader = req.headers['x-toolerbox-api-key']
+            const apiKeyHeader = req.headers['x-transcriptapi-api-key']
             const apiKey = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader
             if (apiKey) {
               proxyReq.setHeader('Authorization', `Bearer ${apiKey}`)
             }
-            proxyReq.removeHeader('x-toolerbox-api-key')
+            proxyReq.removeHeader('x-transcriptapi-api-key')
           })
         },
       },

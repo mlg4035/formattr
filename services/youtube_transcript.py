@@ -2,10 +2,11 @@ import json
 import os
 import re
 from html import unescape
+from urllib.parse import urlencode
 import urllib.error
 import urllib.request
 
-TOOLERBOX_TRANSCRIPT_URL = "https://toolerbox.com/api/v1/youtube-transcript"
+TRANSCRIPT_API_URL = "https://transcriptapi.com/api/v2/youtube/transcript"
 YOUTUBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
 MAX_HTML_UNESCAPE_PASSES = 5
 
@@ -23,7 +24,14 @@ def _extract_error_detail(exc: urllib.error.HTTPError) -> str:
         for key in ("message", "error", "detail"):
             value = payload.get(key)
             if isinstance(value, str) and value.strip():
-                return value
+                return value.strip()
+            if isinstance(value, dict):
+                message = value.get("message")
+                if isinstance(message, str) and message.strip():
+                    return message.strip()
+        code = payload.get("code")
+        if isinstance(code, str) and code.strip():
+            return code.strip()
     return body.strip() or str(exc)
 
 
@@ -37,6 +45,25 @@ def _decode_html_entities(text: str) -> str:
     return decoded
 
 
+def _transcript_to_text(transcript: object) -> str:
+    if isinstance(transcript, str):
+        return transcript.strip()
+    if not isinstance(transcript, list):
+        return ""
+    parts: list[str] = []
+    for segment in transcript:
+        if isinstance(segment, str):
+            text = segment
+        elif isinstance(segment, dict) and isinstance(segment.get("text"), str):
+            text = segment["text"]
+        else:
+            continue
+        cleaned = text.strip()
+        if cleaned:
+            parts.append(cleaned)
+    return " ".join(parts)
+
+
 def fetch_youtube_transcript(video_id: str) -> str:
     normalized_id = video_id.strip()
     if not normalized_id:
@@ -44,34 +71,36 @@ def fetch_youtube_transcript(video_id: str) -> str:
     if not YOUTUBE_ID_PATTERN.fullmatch(normalized_id):
         raise ValueError("YouTube video ID must be 11 characters (letters, numbers, _ or -).")
 
-    api_key = os.getenv("TOOLERBOX_API_KEY", "").strip()
+    api_key = os.getenv("TRANSCRIPTAPI_API_KEY", "").strip()
     if not api_key:
-        raise ValueError("Missing TOOLERBOX_API_KEY in your environment.")
+        raise ValueError("Missing TRANSCRIPTAPI_API_KEY in your environment.")
 
-    payload = {"url": f"https://www.youtube.com/watch?v={normalized_id}"}
+    query = urlencode({"video_url": normalized_id, "format": "json"})
     request = urllib.request.Request(
-        TOOLERBOX_TRANSCRIPT_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
+        f"{TRANSCRIPT_API_URL}?{query}",
+        method="GET",
     )
     request.add_header("Authorization", f"Bearer {api_key}")
-    request.add_header("Content-Type", "application/json")
+    request.add_header("Accept", "application/json")
+    # Cloudflare rejects Python's default urllib user agent.
+    request.add_header("User-Agent", "Formatr/1.0")
 
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             raw_response = response.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         detail = _extract_error_detail(exc)
-        raise RuntimeError(f"ToolerBox transcript request failed ({exc.code}): {detail}") from exc
+        raise RuntimeError(f"TranscriptAPI request failed ({exc.code}): {detail}") from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise RuntimeError(f"ToolerBox transcript request failed: {exc}") from exc
+        raise RuntimeError(f"TranscriptAPI request failed: {exc}") from exc
 
     try:
         result = json.loads(raw_response)
     except json.JSONDecodeError as exc:
-        raise RuntimeError("ToolerBox transcript response was not valid JSON.") from exc
+        raise RuntimeError("TranscriptAPI response was not valid JSON.") from exc
 
-    transcript_text = result.get("text") if isinstance(result, dict) else None
-    if not isinstance(transcript_text, str) or not transcript_text.strip():
-        raise RuntimeError("ToolerBox transcript response did not include transcript text.")
-    return _decode_html_entities(transcript_text).strip()
+    transcript = result.get("transcript") if isinstance(result, dict) else None
+    transcript_text = _decode_html_entities(_transcript_to_text(transcript)).strip()
+    if not transcript_text:
+        raise RuntimeError("TranscriptAPI response did not include transcript text.")
+    return transcript_text

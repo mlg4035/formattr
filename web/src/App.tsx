@@ -20,10 +20,10 @@ type FormatOptions = {
 }
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
-const TOOLERBOX_KEYS_URL = 'https://toolerbox.com/dashboard/keys/'
-const TOOLERBOX_TRANSCRIPT_PROXY_PATH = '/api/toolerbox/youtube-transcript'
-const TOOLERBOX_TRANSCRIPT_URL =
-  import.meta.env.VITE_TOOLERBOX_TRANSCRIPT_URL?.trim() || TOOLERBOX_TRANSCRIPT_PROXY_PATH
+const TRANSCRIPTAPI_KEYS_URL = 'https://transcriptapi.com/signup'
+const TRANSCRIPTAPI_TRANSCRIPT_PROXY_PATH = '/api/transcriptapi/youtube/transcript'
+const TRANSCRIPTAPI_TRANSCRIPT_URL =
+  import.meta.env.VITE_TRANSCRIPTAPI_TRANSCRIPT_URL?.trim() || TRANSCRIPTAPI_TRANSCRIPT_PROXY_PATH
 const WEB_LOGO_PATH = '/favicon.svg'
 const WEB_FAVICON_PATH = '/favicon.svg'
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
@@ -37,7 +37,11 @@ type RememberKeysScope = 'none' | 'session' | 'local'
 
 type PersistedApiKeys = {
   openRouterApiKey: string
-  toolerboxApiKey: string
+  transcriptApiKey: string
+}
+
+type TranscriptSegment = {
+  text?: string
 }
 
 type PresetSettings = {
@@ -237,19 +241,35 @@ function decodeHtmlEntities(text: string): string {
 function parseErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object') return null
   const obj = payload as Record<string, unknown>
-  const error = obj.error
-  if (typeof error === 'string' && error.trim()) return error
-  if (error && typeof error === 'object') {
-    const nestedMessage = (error as Record<string, unknown>).message
-    if (typeof nestedMessage === 'string' && nestedMessage.trim()) return nestedMessage
+  for (const key of ['error', 'message', 'detail'] as const) {
+    const value = obj[key]
+    if (typeof value === 'string' && value.trim()) return value
+    if (value && typeof value === 'object') {
+      const nestedMessage = (value as Record<string, unknown>).message
+      if (typeof nestedMessage === 'string' && nestedMessage.trim()) return nestedMessage
+    }
   }
-  const message = obj.message
-  if (typeof message === 'string' && message.trim()) return message
   return null
 }
 
+function transcriptToText(transcript: unknown): string {
+  if (typeof transcript === 'string') return transcript
+  if (!Array.isArray(transcript)) return ''
+  return transcript
+    .map((segment) => {
+      if (typeof segment === 'string') return segment.trim()
+      if (segment && typeof segment === 'object') {
+        const text = (segment as TranscriptSegment).text
+        return typeof text === 'string' ? text.trim() : ''
+      }
+      return ''
+    })
+    .filter(Boolean)
+    .join(' ')
+}
+
 function loadPersistedApiKeys(scope: RememberKeysScope): PersistedApiKeys {
-  const empty = { openRouterApiKey: '', toolerboxApiKey: '' }
+  const empty = { openRouterApiKey: '', transcriptApiKey: '' }
   if (scope === 'none') return empty
 
   const storage = scope === 'session' ? sessionStorage : localStorage
@@ -259,7 +279,7 @@ function loadPersistedApiKeys(scope: RememberKeysScope): PersistedApiKeys {
     const parsed = JSON.parse(raw) as Partial<PersistedApiKeys>
     return {
       openRouterApiKey: typeof parsed.openRouterApiKey === 'string' ? parsed.openRouterApiKey : '',
-      toolerboxApiKey: typeof parsed.toolerboxApiKey === 'string' ? parsed.toolerboxApiKey : '',
+      transcriptApiKey: typeof parsed.transcriptApiKey === 'string' ? parsed.transcriptApiKey : '',
     }
   } catch {
     return empty
@@ -395,8 +415,8 @@ function App() {
   const [openRouterApiKey, setOpenRouterApiKey] = useState(
     () => loadPersistedApiKeys(savedSettings.rememberApiKeysScope).openRouterApiKey,
   )
-  const [toolerboxApiKey, setToolerboxApiKey] = useState(
-    () => loadPersistedApiKeys(savedSettings.rememberApiKeysScope).toolerboxApiKey,
+  const [transcriptApiKey, setTranscriptApiKey] = useState(
+    () => loadPersistedApiKeys(savedSettings.rememberApiKeysScope).transcriptApiKey,
   )
   const [inputText, setInputText] = useState('')
   const [formattedText, setFormattedText] = useState('')
@@ -476,10 +496,10 @@ function App() {
       KEYS_STORAGE_KEY,
       JSON.stringify({
         openRouterApiKey,
-        toolerboxApiKey,
+        transcriptApiKey,
       }),
     )
-  }, [openRouterApiKey, rememberApiKeysScope, toolerboxApiKey])
+  }, [openRouterApiKey, rememberApiKeysScope, transcriptApiKey])
 
   useEffect(() => {
     localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets))
@@ -511,7 +531,7 @@ function App() {
     [inputText, openRouterApiKey, selectedModel],
   )
 
-  const hasSavedApiKeys = rememberApiKeysScope !== 'none' || openRouterApiKey.trim() || toolerboxApiKey.trim()
+  const hasSavedApiKeys = rememberApiKeysScope !== 'none' || openRouterApiKey.trim() || transcriptApiKey.trim()
 
   function handleClearSavedKeys() {
     clearSavedApiKeys()
@@ -625,36 +645,38 @@ function App() {
       setErrorMessage('Enter a valid 11-character YouTube video ID.')
       return
     }
-    const key = toolerboxApiKey.trim()
+    const key = transcriptApiKey.trim()
     if (!key) {
-      setErrorMessage('ToolerBox API key is optional overall, but required for transcript loading.')
+      setErrorMessage('TranscriptAPI key is optional overall, but required for transcript loading.')
       return
     }
     setIsLoadingTranscript(true)
     try {
-      const response = await fetch(TOOLERBOX_TRANSCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Toolerbox-Api-Key': key,
-        },
-        body: JSON.stringify({
-          url: `https://www.youtube.com/watch?v=${normalizedVideoId}`,
-        }),
+      const params = new URLSearchParams({
+        video_url: normalizedVideoId,
+        format: 'json',
       })
-      const payload = (await response.json()) as { text?: string }
+      const response = await fetch(`${TRANSCRIPTAPI_TRANSCRIPT_URL}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'X-Transcriptapi-Api-Key': key,
+        },
+      })
+      const payload = (await response.json()) as { transcript?: unknown }
       if (!response.ok) {
         throw new Error(parseErrorMessage(payload) ?? `Transcript request failed (${response.status})`)
       }
-      if (!payload.text?.trim()) {
+      const transcriptText = decodeHtmlEntities(transcriptToText(payload.transcript)).trim()
+      if (!transcriptText) {
         throw new Error('Transcript response did not include text.')
       }
-      setInputText(decodeHtmlEntities(payload.text).trim())
+      setInputText(transcriptText)
       setSuccessMessage('Transcript loaded into Input.')
     } catch (error) {
       if (error instanceof TypeError) {
         setErrorMessage(
-          'Transcript request failed due to network/CORS. Configure a same-origin proxy or set VITE_TOOLERBOX_TRANSCRIPT_URL.',
+          'Transcript request failed due to network/CORS. Configure a same-origin proxy or set VITE_TRANSCRIPTAPI_TRANSCRIPT_URL.',
         )
       } else {
         setErrorMessage(error instanceof Error ? error.message : 'Transcript request failed.')
@@ -804,16 +826,16 @@ function App() {
             />
           </label>
           <label>
-            ToolerBox API key (optional)
+            TranscriptAPI key (optional)
             <input
               type="password"
-              value={toolerboxApiKey}
-              onChange={(event) => setToolerboxApiKey(event.target.value)}
-              placeholder="mcpsk_..."
+              value={transcriptApiKey}
+              onChange={(event) => setTranscriptApiKey(event.target.value)}
+              placeholder="sk_..."
               autoComplete="off"
             />
-            <a className="field-help-link" href={TOOLERBOX_KEYS_URL} target="_blank" rel="noopener noreferrer">
-              Get a ToolerBox API key
+            <a className="field-help-link" href={TRANSCRIPTAPI_KEYS_URL} target="_blank" rel="noopener noreferrer">
+              Get a TranscriptAPI key
             </a>
           </label>
         </div>

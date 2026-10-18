@@ -1,6 +1,6 @@
 # Formattr User Guide
 
-Formattr is a browser-based text formatter that turns rough notes, transcripts, and drafts into clean Markdown. The Web BYOK version runs entirely in your browser: you supply your own API keys, and requests go directly to OpenRouter (and optionally ToolerBox for YouTube transcripts). Formattr servers never store your keys or your text.
+Formattr is a browser-based text formatter that turns rough notes, transcripts, and drafts into clean Markdown. The Web BYOK version runs entirely in your browser: you supply your own API keys, and requests go directly to OpenRouter (and optionally TranscriptAPI for YouTube transcripts). Formattr servers never store your keys or your text.
 
 ---
 
@@ -25,9 +25,9 @@ Used for model listing and formatting. Get a key at [openrouter.ai](https://open
 - Click **Load OpenRouter Models** before formatting so the model list is current.
 - You pay OpenRouter directly for usage; Formattr does not bill you.
 
-### ToolerBox API key (optional)
+### TranscriptAPI key (optional)
 
-Required only if you use **Load Transcript** for YouTube videos. Get a key from [ToolerBox](https://toolerbox.com/dashboard/keys/) if you use that feature.
+Required only if you use **Load Transcript** for YouTube videos. Get a key from [TranscriptAPI](https://transcriptapi.com/signup) if you use that feature.
 
 ### Remember API keys
 
@@ -39,7 +39,7 @@ By default, keys are kept in memory only and disappear when you refresh or leave
 | **This browser session** | Keys saved in `sessionStorage`. Survives refresh; cleared when you close the browser. |
 | **On this device** | Keys saved in `localStorage`. Persist between visits on the same browser and device. |
 
-Keys are stored only in your browser. They are never sent to Formattr servers except when forwarded directly to OpenRouter or ToolerBox as part of an API request you initiate.
+Keys are stored only in your browser. They are never sent to Formattr servers except when forwarded directly to OpenRouter or TranscriptAPI as part of an API request you initiate.
 
 Use **Clear saved keys** to wipe stored keys, empty the key fields, and reset to “Don't remember.”
 
@@ -141,7 +141,7 @@ Paste or type source content into the large text area. Formatting requires non-e
 2. Paste it into the video ID field.
 3. Click **Load Transcript**.
 
-Requires a ToolerBox API key. The transcript replaces the current input text.
+Requires a TranscriptAPI key. The transcript replaces the current input text.
 
 ### Format and Reset
 
@@ -210,7 +210,7 @@ No account login is required. Nothing is uploaded to Formattr servers for storag
 
 - **BYOK** (Bring Your Own Key) means you provide and pay for your own API access.
 - Keys and text are sent from your browser directly to OpenRouter when you click Format.
-- ToolerBox transcript requests go through a same-origin proxy on the Formattr host so your browser can reach ToolerBox; the proxy forwards your key to ToolerBox but does not store it.
+- TranscriptAPI requests go through a same-origin proxy on the Formattr host so your browser can reach TranscriptAPI; the proxy forwards your key to TranscriptAPI but does not store it.
 - Formattr does not collect cookies for authentication or track your content.
 
 If you use a shared computer, avoid “On this device” key storage and clear saved keys when finished.
@@ -226,7 +226,7 @@ Enter a valid key before loading models or formatting.
 Click **Load OpenRouter Models** again. Check that your key is valid and has access to OpenRouter's model API.
 
 ### Transcript loading fails
-Confirm your ToolerBox key is set and the video ID is exactly 11 characters. Some videos may not have transcripts available.
+Confirm your TranscriptAPI key is set and the video ID is exactly 11 characters. Some videos may not have transcripts available.
 
 ### Formatting is too heavy or too light
 Try a different **Text changes** level, switch presets, or turn structure controls from **Prefer** to **Auto** or **Off**.
